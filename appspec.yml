@@ -1,0 +1,26 @@
+version: 0.0
+os: linux
+
+files:
+  - source: /  # 리포지토리 전체(/)를 의미
+    destination: /var/www/html/gnuboard5 # EC2의 그누보드 설치 경로
+    overwrite: true # 덮어쓰기 허용
+
+permissions:
+  - object: /var/www/html/gnuboard5
+    pattern: "**" # 모든 파일
+    owner: apache # 웹서버 사용자 (Apache 기준)
+    group: apache # 웹서버 그룹
+    mode: 644
+  - object: /var/www/html/gnuboard5/data # data 폴더는 쓰기 권한 필요
+    pattern: "**"
+    owner: apache
+    group: apache
+    mode: 755 # 또는 707 등 그누보드 권장 권한
+
+hooks:
+  # 배포가 완료된 후 실행할 스크립트
+  ApplicationStart:
+    - location: scripts/restart_server.sh # 이 파일을 아래 3단계에서 만듭니다.
+      timeout: 60
+      runas: root
