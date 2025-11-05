@@ -1,0 +1,35 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.11 # Semgrep은 Python이 필요합니다.
+    commands:
+      # 1. Semgrep (SAST) 설치
+      - echo "Installing Semgrep..."
+      - pip install semgrep
+
+      # 2. Trivy (SCA) 설치 (Amazon Linux 2/2023 - RPM 방식)
+      - echo "Installing Trivy..."
+      - wget https://github.com/aquasecurity/trivy/releases/download/v0.51.1/trivy_0.51.1_Linux-64bit.rpm
+      - sudo rpm -ivh trivy_0.51.1_Linux-64bit.rpm
+
+  build:
+    commands:
+      # 1. Semgrep (SAST) 스캔 실행
+      - echo "Running Semgrep SAST scan on PHP code..."
+      # "p/php"는 PHP 표준 보안 규칙셋입니다.
+      # "--error" 옵션: 취약점이 1개라도 발견되면 빌드를 '실패'시킵니다. (파이프라인 중단)
+      - semgrep --config "p/php" --error .
+
+      # 2. Trivy (SCA) 스캔 실행 (composer.lock 파일이 있다면 스캔)
+      - echo "Running Trivy SCA scan on composer.lock (if exists)..."
+      # '--exit-code 1': HIGH 또는 CRITICAL 심각도의 취약점이 발견되면 빌드를 '실패'시킵니다.
+      - trivy fs --exit-code 1 --severity HIGH,CRITICAL .
+
+artifacts:
+  # 이 부분은 'Deploy' 단계로 파일을 전달하기 위해 반드시 필요합니다.
+  files:
+    - '**/*'
+  # artifact 이름은 Deploy 단계의 입력 아티팩트와 일치해야 합니다.
+  name: BuildOutput
