@@ -1,26 +1,32 @@
 version: 0.0
 os: linux
 
+hooks:
+  # 1. 'BeforeInstall': 파일 복사(Install) 단계 직전에 실행됩니다.
+  BeforeInstall:
+    - location: scripts/clean_directory.sh # 기존 폴더를 청소하는 스크립트
+      timeout: 300
+      runas: root # root 권한으로 실행
+      
+  # 2. 'ApplicationStart': 모든 배포가 완료된 후 실행됩니다.
+  ApplicationStart:
+    - location: scripts/restart_server.sh # 웹 서버를 재시작하는 스크립트
+      timeout: 60
+      runas: root
+
 files:
-  - source: /  # 리포지토리 전체(/)를 의미
-    destination: /var/www/html/gnuboard5 # EC2의 그누보드 설치 경로
-    overwrite: true # 덮어쓰기 허용
+  - source: /
+    destination: /var/www/html/gnuboard5
+    overwrite: true # 덮어쓰기 허용 (기존 파일 삭제 로직과 함께 사용)
 
 permissions:
   - object: /var/www/html/gnuboard5
-    pattern: "**" # 모든 파일
-    owner: apache # 웹서버 사용자 (Apache 기준)
-    group: apache # 웹서버 그룹
-    mode: 644
-  - object: /var/www/html/gnuboard5/data # data 폴더는 쓰기 권한 필요
     pattern: "**"
     owner: apache
     group: apache
-    mode: 755 # 또는 707 등 그누보드 권장 권한
-
-hooks:
-  # 배포가 완료된 후 실행할 스크립트
-  ApplicationStart:
-    - location: scripts/restart_server.sh # 이 파일을 아래 3단계에서 만듭니다.
-      timeout: 60
-      runas: root
+    mode: 644
+  - object: /var/www/html/gnuboard5/data
+    pattern: "**"
+    owner: apache
+    group: apache
+    mode: 755
